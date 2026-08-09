@@ -1,0 +1,126 @@
+.impostor-demo-root {
+  position: fixed;
+  inset: 0;
+  background: #0b0d10;
+  overflow: hidden;
+}
+
+.impostor-canvas {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.impostor-demo-layout {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(280px, 36vw) 1fr;
+  grid-template-rows: 1fr;
+  gap: 10px;
+  padding: 10px;
+  pointer-events: none;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.impostor-demo-left {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+.impostor-demo-right {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.impostor-view-panel {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.impostor-view-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  background: transparent;
+}
+
+.impostor-view-panel--main .impostor-view-track {
+  cursor: grab;
+}
+
+.impostor-view-panel--main .impostor-view-track:active {
+  cursor: grabbing;
+}
+
+.demo-controls-bar {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.demo-control-button {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.demo-control-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.demo-control-button[data-active="true"] {
+  background: rgba(255, 204, 0, 0.22);
+  border-color: rgba(255, 204, 0, 0.75);
+  color: #ffeaa0;
+}
+
+@media (max-width: 960px) {
+  .impostor-demo-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(160px, 28vh) minmax(160px, 28vh) minmax(220px, 1fr);
+  }
+
+  .impostor-demo-left {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    height: auto;
+  }
+
+  .impostor-demo-right {
+    height: auto;
+    min-height: 220px;
+  }
+}

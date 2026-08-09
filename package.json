@@ -1,0 +1,26 @@
+{
+  "name": "octahedral-impostor-demo",
+  "version": "1.0.0",
+  "description": "Visual WebGPU demo of octahedral impostors with atlas and capture rig views",
+  "keywords": [],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "deploy": "vercel deploy --prod",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "10.7.6",
+    "@react-three/fiber": "9.3.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "three": "^0.185.1",
+    "vercel": "^57.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.11"
+  }
+}
