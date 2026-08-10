@@ -4,6 +4,8 @@ Visual WebGPU demo of **octahedral impostors** — bake a mesh into a direction 
 
 Built with React Three Fiber, Three.js WebGPU + TSL (`MeshBasicNodeMaterial`), and a dynamic atlas baker inspired by the [Shaderbits octahedral impostors](https://shaderbits.com/blog/octahedral-impostors) approach (bake path adapted from planpoint-webgpu).
 
+Live demo: https://webgpu-octahedral-impostor.vercel.app/
+
 > This repo is a **runnable demo**, not an npm package. The reusable pieces live under `src/impostor/` — copy them into your project or import from source.
 
 ## Requirements
