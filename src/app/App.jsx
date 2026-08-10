@@ -8,11 +8,14 @@ import "./impostor-demo.css";
 export default function App() {
   const [showImpostors, setShowImpostors] = useState(false);
   const [wireframe, setWireframe] = useState(false);
+  const [impostorCount, setImpostorCount] = useState(2);
+  const [scaleVariance, setScaleVariance] = useState(0.15);
 
   const atlasViewRef = useRef(null);
   const rigViewRef = useRef(null);
   const mainViewRef = useRef(null);
   const layoutRef = useRef(null);
+  const statsRef = useRef(null);
 
   const viewsReady = useAllTracksReady(atlasViewRef, rigViewRef, mainViewRef);
 
@@ -37,8 +40,19 @@ export default function App() {
         </div>
 
         <div className="impostor-demo-right">
-          <div className="impostor-view-panel">
+          <div className="impostor-view-panel impostor-view-panel--main">
             <div ref={mainViewRef} className="impostor-view-track" />
+            <Overlay
+              showImpostors={showImpostors}
+              wireframe={wireframe}
+              impostorCount={impostorCount}
+              scaleVariance={scaleVariance}
+              onToggleImpostors={handleToggleImpostors}
+              onToggleWireframe={handleToggleWireframe}
+              onImpostorCountChange={setImpostorCount}
+              onScaleVarianceChange={setScaleVariance}
+              statsRef={statsRef}
+            />
           </div>
         </div>
       </div>
@@ -51,15 +65,12 @@ export default function App() {
           mainViewRef={mainViewRef}
           showImpostors={showImpostors}
           wireframe={wireframe}
+          impostorCount={impostorCount}
+          scaleVariance={scaleVariance}
+          statsElementRef={statsRef}
         />
       )}
 
-      <Overlay
-        showImpostors={showImpostors}
-        wireframe={wireframe}
-        onToggleImpostors={handleToggleImpostors}
-        onToggleWireframe={handleToggleWireframe}
-      />
       <InfoOverlay />
     </div>
   );

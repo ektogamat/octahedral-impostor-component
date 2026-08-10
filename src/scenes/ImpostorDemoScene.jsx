@@ -22,6 +22,9 @@ export default function ImpostorDemoScene({
   mainViewRef,
   showImpostors,
   wireframe,
+  impostorCount,
+  scaleVariance,
+  statsElementRef,
 }) {
   const activeSampleRef = useRef(createEmptySample());
   const meshData = useCoconutTreeMesh();
@@ -117,6 +120,9 @@ export default function ImpostorDemoScene({
             treeScale={treeScale}
             showImpostors={showImpostors}
             wireframe={wireframe}
+            impostorCount={impostorCount}
+            scaleVariance={scaleVariance}
+            statsElementRef={statsElementRef}
           />
         </Suspense>
       </TrackedView>

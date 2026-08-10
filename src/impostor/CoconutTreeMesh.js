@@ -76,6 +76,14 @@ export function CoconutTreeModel({
         ? node.material
         : [node.material];
       materials.forEach((material) => {
+        if (wireframe) {
+          if (material.userData.__impostorBaseColor === undefined) {
+            material.userData.__impostorBaseColor = material.color.getHex();
+          }
+          material.color.setHex(0x000000);
+        } else if (material.userData.__impostorBaseColor !== undefined) {
+          material.color.setHex(material.userData.__impostorBaseColor);
+        }
         material.wireframe = wireframe;
         material.needsUpdate = true;
       });

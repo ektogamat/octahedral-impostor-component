@@ -11,6 +11,9 @@ export default function ImpostorCanvas({
   mainViewRef,
   showImpostors,
   wireframe,
+  impostorCount,
+  scaleVariance,
+  statsElementRef,
 }) {
   return (
     <Canvas
@@ -31,6 +34,9 @@ export default function ImpostorCanvas({
           mainViewRef={mainViewRef}
           showImpostors={showImpostors}
           wireframe={wireframe}
+          impostorCount={impostorCount}
+          scaleVariance={scaleVariance}
+          statsElementRef={statsElementRef}
         />
       </Suspense>
     </Canvas>

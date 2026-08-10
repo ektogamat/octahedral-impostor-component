@@ -71,15 +71,109 @@
   cursor: grabbing;
 }
 
+.demo-main-stats {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.55);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  pointer-events: none;
+}
+
+.demo-main-stats span {
+  color: #ffeaa0;
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+}
+
 .demo-controls-bar {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  right: 20px;
+  bottom: 20px;
   z-index: 50;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   pointer-events: auto;
+}
+
+.demo-slider-bar {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 72px;
+  z-index: 50;
+  width: auto;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: auto;
+}
+
+.demo-slider-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.demo-slider-value {
+  color: #ffeaa0;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+  cursor: pointer;
+}
+
+.demo-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 204, 0, 0.85);
+  background: #ffcc00;
+  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.15);
+  cursor: pointer;
+}
+
+.demo-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 204, 0, 0.85);
+  background: #ffcc00;
+  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.15);
+  cursor: pointer;
 }
 
 .demo-control-button {
@@ -122,5 +216,22 @@
   .impostor-demo-right {
     height: auto;
     min-height: 220px;
+  }
+
+  .demo-controls-bar {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .demo-slider-bar {
+    left: 12px;
+    right: 12px;
+    bottom: 64px;
+    max-width: none;
+  }
+
+  .demo-main-stats {
+    top: 10px;
+    left: 10px;
   }
 }

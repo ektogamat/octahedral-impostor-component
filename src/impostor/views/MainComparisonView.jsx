@@ -2,10 +2,11 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import OctahedralImpostor from "../OctahedralImpostor";
 import { CoconutTreeModel } from "../CoconutTreeMesh";
-import { useImpostorDemo, DEMO_GRID_SIZE } from "../impostorDemoStore";
+import { useImpostorDemo } from "../impostorDemoStore";
 import { sampleOctahedralDirection } from "../utils/octahedralImpostorMath";
+import ImpostorField from "../ImpostorField";
+import MainViewStats from "../MainViewStats";
 
 function MainSamplingDriver({ targetCenter }) {
   const { camera } = useThree();
@@ -20,8 +21,6 @@ function MainSamplingDriver({ targetCenter }) {
 
     viewDir.current.copy(camera.position).sub(targetCenter).normalize();
     sampleDir.current.copy(viewDir.current);
-    // Soft floor so hemi sampling stays in the captured upper hemisphere
-    // without the old hard 0.08 clamp that warped horizon azimuth.
     if (sampleDir.current.y < 0.001) {
       sampleDir.current.y = 0.001;
       sampleDir.current.normalize();
@@ -49,10 +48,6 @@ function MainSamplingDriver({ targetCenter }) {
   return null;
 }
 
-/**
- * Bake fits the largest AABB axis into ~0.72 of the ortho frame (±0.5).
- * Plane size = that frame in world units so sprite scale matches the mesh.
- */
 function getBakeFrameWorldSize(meshData, treeScale) {
   const sx = meshData?.size?.x ?? 1;
   const sy = meshData?.size?.y ?? 1;
@@ -62,44 +57,14 @@ function getBakeFrameWorldSize(meshData, treeScale) {
   return treeScale / scaleFactor;
 }
 
-function SideImpostor({
-  side,
-  worldWidth,
-  worldHeight,
-  planeSize,
-  showImpostors,
-  wireframe,
-  faceCenter,
-}) {
-  const { atlas, activeSampleRef } = useImpostorDemo();
-  const offsetX = Math.max(worldWidth, planeSize) * 0.85;
-  const centerY = worldHeight * 0.5;
-
-  if (!showImpostors || !atlas?.texture) {
-    return null;
-  }
-
-  return (
-    <group position={[side * offsetX, centerY, 0]}>
-      <OctahedralImpostor
-        atlasPayload={atlas}
-        activeSampleRef={activeSampleRef}
-        faceCenter={faceCenter}
-        gridSize={atlas.gridSize ?? DEMO_GRID_SIZE}
-        geometryArgs={[planeSize, planeSize]}
-        visible
-        wireframe={wireframe}
-        alphaTest={0.3}
-      />
-    </group>
-  );
-}
-
 export default function MainComparisonView({
   meshData,
   treeScale = 1,
   showImpostors = false,
   wireframe = false,
+  impostorCount = 2,
+  scaleVariance = 0,
+  statsElementRef = null,
 }) {
   const worldHeight = (meshData?.height ?? 1) * treeScale;
   const worldWidth =
@@ -112,6 +77,9 @@ export default function MainComparisonView({
     () => new THREE.Vector3(0, worldHeight * 0.5, 0),
     [worldHeight],
   );
+  const fieldRadius = Math.max(worldWidth, planeSize) * 1.35;
+  const fieldCenterY = worldHeight * 0.5;
+
   return (
     <group>
       <perspectiveCamera
@@ -124,6 +92,7 @@ export default function MainComparisonView({
       />
 
       <MainSamplingDriver targetCenter={targetCenter} />
+      <MainViewStats statsElementRef={statsElementRef} />
 
       <CoconutTreeModel
         meshData={meshData}
@@ -132,23 +101,15 @@ export default function MainComparisonView({
         wireframe={wireframe}
       />
 
-      <SideImpostor
-        side={-1}
-        worldWidth={worldWidth}
-        worldHeight={worldHeight}
+      <ImpostorField
+        count={impostorCount}
         planeSize={planeSize}
+        centerY={fieldCenterY}
+        radius={fieldRadius}
+        faceCenter={targetCenter}
+        scaleVariance={scaleVariance}
         showImpostors={showImpostors}
         wireframe={wireframe}
-        faceCenter={targetCenter}
-      />
-      <SideImpostor
-        side={1}
-        worldWidth={worldWidth}
-        worldHeight={worldHeight}
-        planeSize={planeSize}
-        showImpostors={showImpostors}
-        wireframe={wireframe}
-        faceCenter={targetCenter}
       />
 
       <OrbitControls

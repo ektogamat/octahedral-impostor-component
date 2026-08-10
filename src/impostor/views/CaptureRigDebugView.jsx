@@ -54,8 +54,8 @@ function CameraCone({ position, lookTarget, index, size }) {
     const active = Boolean(sample?.indices?.includes(index));
     const pulse = active ? 1.2 + Math.sin(clock.elapsedTime * 5) * 0.12 : 1;
     meshRef.current.scale.setScalar(pulse * (active ? 1.35 : 0.9));
-    materialRef.current.color.set(active ? "#ffcc00" : "#ffffff");
-    materialRef.current.opacity = active ? 1 : 0.4;
+    materialRef.current.color.set(active ? "#ffcc00" : "#707070");
+    materialRef.current.opacity = active ? 1 : 0.32;
     materialRef.current.wireframe = !active;
   });
 
@@ -65,9 +65,9 @@ function CameraCone({ position, lookTarget, index, size }) {
         <coneGeometry args={[size * 0.35, size, 10]} />
         <meshBasicMaterial
           ref={materialRef}
-          color="#ffffff"
+          color="#707070"
           transparent
-          opacity={0.4}
+          opacity={0.32}
           wireframe
           depthWrite={false}
         />
