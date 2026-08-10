@@ -60,11 +60,16 @@ canvas {
   -webkit-backdrop-filter: blur(12px);
   color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
+  text-decoration: none;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
     transform 0.15s ease,
     color 0.2s ease;
+}
+
+a.info-fab {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .info-fab:hover {

@@ -74,7 +74,7 @@
 .demo-model-picker {
   position: absolute;
   top: 14px;
-  right: 60px;
+  right: 120px;
   z-index: 50;
   display: flex;
   align-items: center;
@@ -299,8 +299,8 @@
 
   .demo-model-picker {
     top: 10px;
-    right: 56px;
-    max-width: calc(100% - 80px);
+    right: 116px;
+    max-width: calc(100% - 140px);
   }
 
   .demo-model-select {
