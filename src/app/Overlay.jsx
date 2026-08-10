@@ -1,17 +1,18 @@
 import { DEMO_MODELS } from "../impostor/demoModels";
+import { DEMO_GRID_SIZES } from "../impostor/impostorDemoStore";
 
 export default function Overlay({
   showImpostors,
   showBillboards,
   wireframe,
   impostorCount,
-  scaleVariance,
+  gridSize,
   modelId,
   onToggleImpostors,
   onToggleBillboards,
   onToggleWireframe,
   onImpostorCountChange,
-  onScaleVarianceChange,
+  onGridSizeChange,
   onModelIdChange,
   statsRef,
 }) {
@@ -56,42 +57,46 @@ export default function Overlay({
         </div>
       </div>
 
-      <div className="demo-slider-bar">
-        <label className="demo-slider-label" htmlFor="impostor-count-slider">
-          Impostors
-          <span className="demo-slider-value">{impostorCount}</span>
-        </label>
-        <input
-          id="impostor-count-slider"
-          className="demo-slider-input"
-          type="range"
-          min={2}
-          max={1000}
-          step={1}
-          value={impostorCount}
-          onChange={(event) =>
-            onImpostorCountChange(Number(event.target.value))
-          }
-        />
+      <div className="demo-bottom-left">
+        {(showImpostors || showBillboards) && (
+          <div className="demo-slider-bar">
+            <label className="demo-slider-row" htmlFor="impostor-count-slider">
+              <span className="demo-slider-label">Impostors</span>
+              <input
+                id="impostor-count-slider"
+                className="demo-slider-input"
+                type="range"
+                min={2}
+                max={1000}
+                step={1}
+                value={impostorCount}
+                onChange={(event) =>
+                  onImpostorCountChange(Number(event.target.value))
+                }
+              />
+              <span className="demo-slider-value">{impostorCount}</span>
+            </label>
+          </div>
+        )}
 
-        <label className="demo-slider-label" htmlFor="scale-variance-slider">
-          Scale variance
-          <span className="demo-slider-value">
-            {Math.round(scaleVariance * 100)}%
-          </span>
-        </label>
-        <input
-          id="scale-variance-slider"
-          className="demo-slider-input"
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={scaleVariance}
-          onChange={(event) =>
-            onScaleVarianceChange(Number(event.target.value))
-          }
-        />
+        <div
+          className="demo-grid-bar"
+          role="group"
+          aria-label="Atlas grid size"
+        >
+          <span className="demo-grid-label">Grid</span>
+          {DEMO_GRID_SIZES.map((size) => (
+            <button
+              key={size}
+              type="button"
+              className="demo-grid-button"
+              data-active={gridSize === size}
+              onClick={() => onGridSizeChange(size)}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="demo-controls-bar">

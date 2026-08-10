@@ -14,6 +14,7 @@ export default function ImpostorCanvas({
   wireframe,
   impostorCount,
   scaleVariance,
+  gridSize,
   modelId,
   statsElementRef,
 }) {
@@ -40,6 +41,7 @@ export default function ImpostorCanvas({
           wireframe={wireframe}
           impostorCount={impostorCount}
           scaleVariance={scaleVariance}
+          gridSize={gridSize}
           modelId={modelId}
           statsElementRef={statsElementRef}
         />

@@ -4,6 +4,7 @@ import Overlay from "./Overlay";
 import InfoOverlay from "./InfoOverlay";
 import useAllTracksReady from "../impostor/useAllTracksReady";
 import { DEFAULT_DEMO_MODEL_ID } from "../impostor/demoModels";
+import { DEMO_GRID_SIZE } from "../impostor/impostorDemoStore";
 import "./impostor-demo.css";
 
 export default function App() {
@@ -11,7 +12,8 @@ export default function App() {
   const [showBillboards, setShowBillboards] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [impostorCount, setImpostorCount] = useState(2);
-  const [scaleVariance, setScaleVariance] = useState(0.15);
+  const [scaleVariance] = useState(0.15);
+  const [gridSize, setGridSize] = useState(DEMO_GRID_SIZE);
   const [modelId, setModelId] = useState(DEFAULT_DEMO_MODEL_ID);
 
   const atlasViewRef = useRef(null);
@@ -62,13 +64,13 @@ export default function App() {
               showBillboards={showBillboards}
               wireframe={wireframe}
               impostorCount={impostorCount}
-              scaleVariance={scaleVariance}
+              gridSize={gridSize}
               modelId={modelId}
               onToggleImpostors={handleToggleImpostors}
               onToggleBillboards={handleToggleBillboards}
               onToggleWireframe={handleToggleWireframe}
               onImpostorCountChange={setImpostorCount}
-              onScaleVarianceChange={setScaleVariance}
+              onGridSizeChange={setGridSize}
               onModelIdChange={setModelId}
               statsRef={statsRef}
             />
@@ -87,6 +89,7 @@ export default function App() {
           wireframe={wireframe}
           impostorCount={impostorCount}
           scaleVariance={scaleVariance}
+          gridSize={gridSize}
           modelId={modelId}
           statsElementRef={statsRef}
         />

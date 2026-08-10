@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 
-export const DEMO_GRID_SIZE = 8;
+export const DEMO_GRID_SIZES = [8, 16, 32];
+export const DEMO_GRID_SIZE = DEMO_GRID_SIZES[0];
 export const DEMO_ATLAS_SIZE = 4096;
 export const DEMO_OCT_TYPE = 0;
 

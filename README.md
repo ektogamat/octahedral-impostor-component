@@ -31,7 +31,7 @@ npm run preview  # preview the build
 
 | Panel | Role |
 | --- | --- |
-| **Atlas (top-left)** | Baked hemisphere grid (`DEMO_GRID_SIZE = 8` → 8×8 cells) with live highlight of the active triangle and barycentric weights |
+| **Atlas (top-left)** | Baked hemisphere grid (`8` / `16` / `32` cells, selectable) with live highlight of the active triangle and barycentric weights |
 | **Capture rig (bottom-left)** | Hemisphere wireframe + camera cones around the source mesh |
 | **Main view (right)** | Real GLB in the center + optional radial field of impostor / billboard cards |
 
@@ -41,7 +41,8 @@ npm run preview  # preview the build
 - **Impostor** — view-dependent atlas sampling (octahedral)
 - **Billboard** — same layout, one fixed horizon frame (look from above to see the classic “lying forest”)
 - **Wireframe** — shows the flat quads
-- **Impostors / Scale variance** — field count (2–1000) and size jitter
+- **Impostors** — field count (2–1000); scale variance is fixed in the demo
+- **Grid** — atlas resolution `8` / `16` / `32` (atlas texture stays `4096`)
 - **Stats** — triangles, draw calls, model tris, cost if drawn as mesh, tris avoided
 
 ## How it works (short)
@@ -134,7 +135,7 @@ function ImpostorExample() {
 | Option | Default | Notes |
 | --- | --- | --- |
 | `mesh` | `null` | Root `Object3D` to bake (must set `userData.__impostorSourceId` for caching — `useImpostorSourceMesh` does this) |
-| `gridSize` | `16` | Demo uses `8` |
+| `gridSize` | `16` | Demo offers `8` / `16` / `32` |
 | `atlasSize` | `2048` | Demo uses `4096` |
 | `octType` | `OCT_TYPE.HEMI` | `HEMI` (0) or `FULL` (1) |
 | `enabled` | `true` | |

@@ -37,13 +37,13 @@ canvas {
 
 .fab-actions {
   position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  top: max(16px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  top: max(20px, env(safe-area-inset-top));
   bottom: auto;
   z-index: 9999;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   pointer-events: all;
 }
 
@@ -267,9 +267,9 @@ a.info-fab {
 
 @media only screen and (max-width: 800px) {
   .fab-actions {
-    right: max(12px, env(safe-area-inset-right));
-    top: max(12px, env(safe-area-inset-top));
-    gap: 8px;
+    right: max(14px, env(safe-area-inset-right));
+    top: max(14px, env(safe-area-inset-top));
+    gap: 12px;
   }
 
   .info-fab {

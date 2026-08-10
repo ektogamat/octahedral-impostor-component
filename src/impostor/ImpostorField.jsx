@@ -84,7 +84,7 @@ export default function ImpostorField({
   const wireframeMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: 0x000000,
+        color: 0xffffff,
         wireframe: true,
         side: THREE.DoubleSide,
         transparent: true,

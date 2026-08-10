@@ -139,7 +139,7 @@ export function ImpostorSourceModel({
           if (material.userData.__impostorBaseColor === undefined) {
             material.userData.__impostorBaseColor = material.color.getHex();
           }
-          material.color.setHex(0x000000);
+          material.color.setHex(0xffffff);
         } else if (material.userData.__impostorBaseColor !== undefined) {
           material.color.setHex(material.userData.__impostorBaseColor);
         }

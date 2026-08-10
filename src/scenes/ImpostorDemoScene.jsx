@@ -26,6 +26,7 @@ export default function ImpostorDemoScene({
   wireframe,
   impostorCount,
   scaleVariance,
+  gridSize = DEMO_GRID_SIZE,
   modelId,
   statsElementRef,
 }) {
@@ -35,20 +36,20 @@ export default function ImpostorDemoScene({
 
   const { atlas, error, isGenerating, octahedralData } = useOctahedralAtlas({
     mesh: meshData?.meshGroup ?? null,
-    gridSize: DEMO_GRID_SIZE,
+    gridSize,
     atlasSize: DEMO_ATLAS_SIZE,
     octType: DEMO_OCT_TYPE,
     enabled: Boolean(meshData?.meshGroup),
   });
 
   const samplingCache = useMemo(
-    () => getSamplingCache(DEMO_OCT_TYPE, DEMO_GRID_SIZE),
-    [],
+    () => getSamplingCache(DEMO_OCT_TYPE, gridSize),
+    [gridSize],
   );
 
   const fallbackOctahedralData = useMemo(
-    () => buildOctahedralMesh(DEMO_OCT_TYPE, DEMO_GRID_SIZE),
-    [],
+    () => buildOctahedralMesh(DEMO_OCT_TYPE, gridSize),
+    [gridSize],
   );
 
   const treeScale = useMemo(() => {
@@ -120,7 +121,7 @@ export default function ImpostorDemoScene({
       </TrackedView>
 
       <TrackedView track={mainViewRef} index={3}>
-        <color attach="background" args={["#8fa888"]} />
+        <color attach="background" args={["#000000"]} />
         <ambientLight intensity={0.55} />
         <directionalLight position={[5, 8, 4]} intensity={1.4} />
         <Suspense fallback={null}>

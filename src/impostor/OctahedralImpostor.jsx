@@ -69,7 +69,7 @@ export default function OctahedralImpostor({
           <planeGeometry args={geometryArgs} />
           {wireframe ? (
             <meshBasicMaterial
-              color="#000000"
+              color="#ffffff"
               wireframe
               side={THREE.DoubleSide}
               transparent
