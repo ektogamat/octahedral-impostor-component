@@ -88,7 +88,8 @@ export default function InfoOverlay() {
                 The atlas panel shows the baked grid and highlights the active
                 cell. The capture rig shows virtual cameras placed on a
                 hemisphere around the mesh. The main view compares the real
-                coconut tree with optional billboard impostors on each side.
+                model with an optional radial field of impostor or billboard
+                cards — switch models and count from the controls.
               </p>
             </section>
 

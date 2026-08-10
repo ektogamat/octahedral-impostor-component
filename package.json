@@ -1,14 +1,33 @@
 {
   "name": "octahedral-impostor-demo",
   "version": "1.0.0",
-  "description": "Visual WebGPU demo of octahedral impostors with atlas and capture rig views",
-  "keywords": [],
+  "private": true,
+  "description": "Visual WebGPU demo of octahedral impostors with atlas bake, capture-rig debug, and TSL billboard sampling",
+  "author": "Anderson Mancini",
+  "license": "MIT",
+  "keywords": [
+    "octahedral-impostors",
+    "impostors",
+    "webgpu",
+    "three.js",
+    "react-three-fiber",
+    "tsl",
+    "lod",
+    "billboards"
+  ],
+  "homepage": "https://github.com/ektogamat/octahedral-impostor-component#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ektogamat/octahedral-impostor-component.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ektogamat/octahedral-impostor-component/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "deploy": "vercel deploy --prod",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,11 +35,13 @@
     "@react-three/fiber": "9.3.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "three": "^0.185.1",
-    "vercel": "^57.0.0"
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "4.3.4",
     "vite": "5.4.11"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

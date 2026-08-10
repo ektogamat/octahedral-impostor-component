@@ -22,7 +22,7 @@ export function countMeshTriangles(root) {
 
 /**
  * GLTF often marks opaque paints as alpha-blend (transparent + depthWrite false),
- * which makes body panels see-through depending on draw order (Challenger).
+ * which makes surfaces see-through depending on draw order.
  */
 export function sanitizeSourceMaterial(material) {
   if (!material) return material;
