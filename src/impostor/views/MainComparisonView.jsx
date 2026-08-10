@@ -8,7 +8,7 @@ import { sampleOctahedralDirection } from "../utils/octahedralImpostorMath";
 import ImpostorField from "../ImpostorField";
 import MainViewStats from "../MainViewStats";
 
-function MainSamplingDriver({ targetCenter }) {
+function MainSamplingDriver({ targetCenter, enabled = true }) {
   const { camera } = useThree();
   const indicesRef = useRef(new THREE.Vector3());
   const weightsRef = useRef(new THREE.Vector3());
@@ -17,7 +17,7 @@ function MainSamplingDriver({ targetCenter }) {
   const { samplingCache, activeSampleRef } = useImpostorDemo();
 
   useFrame(() => {
-    if (!samplingCache || !activeSampleRef) return;
+    if (!enabled || !samplingCache || !activeSampleRef) return;
 
     viewDir.current.copy(camera.position).sub(targetCenter).normalize();
     sampleDir.current.copy(viewDir.current);
@@ -97,7 +97,10 @@ export default function MainComparisonView({
         onUpdate={(camera) => camera.lookAt(0, worldHeight * 0.45, 0)}
       />
 
-      <MainSamplingDriver targetCenter={targetCenter} />
+      <MainSamplingDriver
+        targetCenter={targetCenter}
+        enabled={!showBillboards}
+      />
       <MainViewStats statsElementRef={statsElementRef} />
 
       <CoconutTreeModel
@@ -123,7 +126,7 @@ export default function MainComparisonView({
         target={[0, worldHeight * 0.45, 0]}
         minDistance={worldHeight * 5}
         maxDistance={worldHeight * 28}
-        maxPolarAngle={Math.PI * 0.49}
+        maxPolarAngle={Math.PI * 0.47}
         minPolarAngle={0.12}
         enableDamping
         enablePan={false}

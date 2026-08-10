@@ -8,7 +8,7 @@ import { DEMO_GRID_SIZE } from "../impostor/impostorDemoStore";
 import "./impostor-demo.css";
 
 export default function App() {
-  const [showImpostors, setShowImpostors] = useState(false);
+  const [showImpostors, setShowImpostors] = useState(true);
   const [showBillboards, setShowBillboards] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [impostorCount, setImpostorCount] = useState(2);
@@ -48,11 +48,31 @@ export default function App() {
     <div className="impostor-demo-root">
       <div ref={layoutRef} className="impostor-demo-layout">
         <div className="impostor-demo-left">
-          <div className="impostor-view-panel">
+          <div
+            className={`impostor-view-panel${showBillboards ? " is-inactive" : ""}`}
+          >
             <div ref={atlasViewRef} className="impostor-view-track" />
+            {showBillboards && (
+              <div className="impostor-view-inactive-overlay" aria-hidden="true">
+                <span className="impostor-view-inactive-label">Atlas</span>
+                <span className="impostor-view-inactive-copy">
+                  Unused in billboard mode
+                </span>
+              </div>
+            )}
           </div>
-          <div className="impostor-view-panel">
+          <div
+            className={`impostor-view-panel${showBillboards ? " is-inactive" : ""}`}
+          >
             <div ref={rigViewRef} className="impostor-view-track" />
+            {showBillboards && (
+              <div className="impostor-view-inactive-overlay" aria-hidden="true">
+                <span className="impostor-view-inactive-label">Capture rig</span>
+                <span className="impostor-view-inactive-copy">
+                  Unused in billboard mode
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

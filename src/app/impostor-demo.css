@@ -54,6 +54,44 @@
   background: transparent;
 }
 
+.impostor-view-panel.is-inactive {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.impostor-view-inactive-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  background: rgba(6, 8, 10, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
+  text-align: center;
+}
+
+.impostor-view-inactive-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.impostor-view-inactive-copy {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 16ch;
+  line-height: 1.35;
+}
+
 .impostor-view-track {
   position: absolute;
   inset: 0;
