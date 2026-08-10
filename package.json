@@ -28,7 +28,8 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "vercel deploy --prod"
   },
   "dependencies": {
     "@react-three/drei": "10.7.6",
