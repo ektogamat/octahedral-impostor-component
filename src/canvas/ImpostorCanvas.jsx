@@ -10,9 +10,11 @@ export default function ImpostorCanvas({
   rigViewRef,
   mainViewRef,
   showImpostors,
+  showBillboards,
   wireframe,
   impostorCount,
   scaleVariance,
+  modelId,
   statsElementRef,
 }) {
   return (
@@ -29,13 +31,16 @@ export default function ImpostorCanvas({
           environmentIntensity={0.55}
         />
         <ImpostorDemoScene
+          key={modelId}
           atlasViewRef={atlasViewRef}
           rigViewRef={rigViewRef}
           mainViewRef={mainViewRef}
           showImpostors={showImpostors}
+          showBillboards={showBillboards}
           wireframe={wireframe}
           impostorCount={impostorCount}
           scaleVariance={scaleVariance}
+          modelId={modelId}
           statsElementRef={statsElementRef}
         />
       </Suspense>

@@ -71,6 +71,57 @@
   cursor: grabbing;
 }
 
+.demo-model-picker {
+  position: absolute;
+  top: 14px;
+  right: 60px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.62);
+  pointer-events: auto;
+}
+
+.demo-model-picker-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.demo-model-select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #ffeaa0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  padding: 2px 18px 2px 0;
+  cursor: pointer;
+  outline: none;
+  background-image: linear-gradient(45deg, transparent 50%, #ffeaa0 50%),
+    linear-gradient(135deg, #ffeaa0 50%, transparent 50%);
+  background-position:
+    calc(100% - 6px) 48%,
+    calc(100%) 48%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  max-width: 200px;
+}
+
+.demo-model-select option {
+  color: #111;
+  background: #f4f4f4;
+}
+
 .demo-main-stats {
   position: absolute;
   top: 14px;
@@ -78,7 +129,8 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  min-width: 168px;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -91,10 +143,20 @@
   pointer-events: none;
 }
 
-.demo-main-stats span {
+.demo-main-stats-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.demo-main-stats-row span:last-child {
   color: #ffeaa0;
   font-variant-numeric: tabular-nums;
-  margin-left: 8px;
+}
+
+.demo-main-stats-row--accent span:last-child {
+  color: #9dffb0;
 }
 
 .demo-controls-bar {
@@ -233,5 +295,15 @@
   .demo-main-stats {
     top: 10px;
     left: 10px;
+  }
+
+  .demo-model-picker {
+    top: 10px;
+    right: 56px;
+    max-width: calc(100% - 80px);
+  }
+
+  .demo-model-select {
+    max-width: 140px;
   }
 }

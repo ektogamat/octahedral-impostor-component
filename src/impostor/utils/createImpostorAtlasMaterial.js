@@ -5,10 +5,15 @@ export function createImpostorAtlasMaterial(atlasPayload, gridSize, alphaTest = 
   if (!atlasPayload?.texture) return null;
 
   const material = new THREE.MeshBasicNodeMaterial();
+  // Cutout impostors: alphaTest discards empty texels, depthWrite keeps
+  // nearer cards from being overpainted by farther ones (instance order).
+  // Bake uses NoToneMapping; runtime ACES matches the lit mesh view.
   material.transparent = true;
   material.alphaTest = alphaTest;
   material.side = THREE.DoubleSide;
-  material.depthWrite = false;
+  material.depthWrite = true;
+  material.depthTest = true;
+  material.toneMapped = true;
 
   const stride = gridSize + 1;
   const strideUniform = uniform(float(stride));

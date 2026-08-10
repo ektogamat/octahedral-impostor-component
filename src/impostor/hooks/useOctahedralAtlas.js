@@ -17,7 +17,60 @@ function buildAtlasCacheKey(mesh, gridSize, atlasSize, octType) {
         : THREE.MathUtils.generateUUID();
   }
 
-  return `${mesh.userData.__impostorSourceId}|g${gridSize}|a${atlasSize}|o${octType}|v10`;
+  return `${mesh.userData.__impostorSourceId}|g${gridSize}|a${atlasSize}|o${octType}|v14`;
+}
+
+/** PBR/lit sources need lights in the bake; unlit Basic (tree) must stay albedo-only. */
+function sourceNeedsLitBake(mesh) {
+  let needsLit = false;
+  mesh.traverse((node) => {
+    if (!node.isMesh || !node.material) return;
+    const materials = Array.isArray(node.material)
+      ? node.material
+      : [node.material];
+    for (const material of materials) {
+      if (
+        material.isMeshStandardMaterial ||
+        material.isMeshPhysicalMaterial ||
+        material.isMeshLambertMaterial ||
+        material.isMeshPhongMaterial
+      ) {
+        needsLit = true;
+        break;
+      }
+    }
+  });
+  return needsLit;
+}
+
+function createBakeMaterial(material, litBake) {
+  const hasCutout =
+    (material.alphaTest ?? 0) > 0 || Boolean(material.alphaMap);
+  const shared = {
+    color: material.color?.clone?.() ?? new THREEGL.Color(0xffffff),
+    map: material.map ?? null,
+    alphaMap: material.alphaMap ?? null,
+    transparent: hasCutout,
+    alphaTest: hasCutout ? Math.max(material.alphaTest ?? 0, 0.05) : 0,
+    side: THREEGL.DoubleSide,
+    depthWrite: true,
+    toneMapped: false,
+  };
+
+  if (!litBake) {
+    return new THREEGL.MeshBasicMaterial(shared);
+  }
+
+  return new THREEGL.MeshStandardMaterial({
+    ...shared,
+    metalness: material.metalness ?? 0,
+    roughness: material.roughness ?? 0.8,
+    normalMap: material.normalMap ?? null,
+    aoMap: material.aoMap ?? null,
+    emissive: material.emissive?.clone?.() ?? new THREEGL.Color(0x000000),
+    emissiveMap: material.emissiveMap ?? null,
+    emissiveIntensity: material.emissiveIntensity ?? 1,
+  });
 }
 
 export function useOctahedralAtlas({
@@ -83,9 +136,10 @@ export function useOctahedralAtlas({
       gridSize,
       atlasSize,
     })
-      .then((texture) => {
+      .then(({ texture, litBake }) => {
         const atlasPayload = {
           texture,
+          litBake,
           gridSize,
           octType,
           octahedralData,
@@ -157,20 +211,23 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   const center = bounds.getCenter(new THREE.Vector3());
   const size = bounds.getSize(new THREE.Vector3());
 
-  // Collapse hierarchy into centered local geometry so every view orbits the same pivot.
+  // Bake world matrices into geometry, then clear EVERY node transform.
+  // Sketchfab kits (e.g. fox) keep tiny scales on parents — zeroing only the
+  // mesh leaves those parents applied twice and the subject vanishes from the
+  // ortho frustum (empty atlas).
   renderMesh.traverse((node) => {
     if (!node.isMesh || !node.geometry) return;
     node.updateMatrixWorld(true);
     node.geometry.applyMatrix4(node.matrixWorld);
     node.geometry.translate(-center.x, -center.y, -center.z);
+  });
+  renderMesh.traverse((node) => {
     node.position.set(0, 0, 0);
     node.rotation.set(0, 0, 0);
+    node.quaternion.identity();
     node.scale.set(1, 1, 1);
     node.updateMatrix();
   });
-  renderMesh.position.set(0, 0, 0);
-  renderMesh.rotation.set(0, 0, 0);
-  renderMesh.scale.set(1, 1, 1);
 
   const maxDim = Math.max(size.x, size.y, size.z, 0.001);
   const scaleFactor = 0.72 / maxDim;
@@ -202,9 +259,23 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   });
   tempGlRenderer.setSize(cellSize, cellSize);
   tempGlRenderer.setClearColor(0x000000, 0);
+  // No ACES in the bake — runtime tone-maps impostors once (matches main view).
+  tempGlRenderer.outputColorSpace = THREEGL.SRGBColorSpace;
+  tempGlRenderer.toneMapping = THREEGL.NoToneMapping;
 
+  const litBake = sourceNeedsLitBake(renderMesh);
   const glRenderScene = new THREEGL.Scene();
-  glRenderScene.add(new THREEGL.AmbientLight(0xffffff, 0.2));
+
+  if (litBake) {
+    // Match MainComparisonView lights (Environment IBL is approximate via fill).
+    glRenderScene.add(new THREEGL.AmbientLight(0xffffff, 0.55));
+    const key = new THREEGL.DirectionalLight(0xffffff, 1.4);
+    key.position.set(5, 8, 4);
+    glRenderScene.add(key);
+    const fill = new THREEGL.DirectionalLight(0xffffff, 0.45);
+    fill.position.set(-4, 3, -2);
+    glRenderScene.add(fill);
+  }
 
   const glRenderCam = new THREEGL.OrthographicCamera(
     -orthoSize,
@@ -221,17 +292,9 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
     const sourceMaterials = Array.isArray(node.material)
       ? node.material
       : [node.material];
-    const bakedMaterials = sourceMaterials.map((material) => {
-      return new THREEGL.MeshBasicMaterial({
-        color: material.color?.clone?.() ?? new THREEGL.Color(0xffffff),
-        map: material.map ?? null,
-        alphaMap: material.alphaMap ?? null,
-        transparent: true,
-        alphaTest: 0.05,
-        side: THREEGL.DoubleSide,
-        depthWrite: true,
-      });
-    });
+    const bakedMaterials = sourceMaterials.map((material) =>
+      createBakeMaterial(material, litBake),
+    );
     node.material =
       bakedMaterials.length === 1 ? bakedMaterials[0] : bakedMaterials;
   });
@@ -306,5 +369,5 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   atlasTexture.wrapS = THREE.ClampToEdgeWrapping;
   atlasTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-  return atlasTexture;
+  return { texture: atlasTexture, litBake };
 }

@@ -61,11 +61,17 @@ export default function MainComparisonView({
   meshData,
   treeScale = 1,
   showImpostors = false,
+  showBillboards = false,
   wireframe = false,
   impostorCount = 2,
   scaleVariance = 0,
   statsElementRef = null,
 }) {
+  const fieldMode = showImpostors
+    ? "impostor"
+    : showBillboards
+      ? "billboard"
+      : "off";
   const worldHeight = (meshData?.height ?? 1) * treeScale;
   const worldWidth =
     Math.max(meshData?.size?.x ?? 1, meshData?.size?.z ?? 1) * treeScale;
@@ -77,7 +83,7 @@ export default function MainComparisonView({
     () => new THREE.Vector3(0, worldHeight * 0.5, 0),
     [worldHeight],
   );
-  const fieldRadius = Math.max(worldWidth, planeSize) * 1.35;
+  const fieldRadius = Math.max(worldWidth, planeSize) * 1.05;
   const fieldCenterY = worldHeight * 0.5;
 
   return (
@@ -108,15 +114,15 @@ export default function MainComparisonView({
         radius={fieldRadius}
         faceCenter={targetCenter}
         scaleVariance={scaleVariance}
-        showImpostors={showImpostors}
+        mode={fieldMode}
         wireframe={wireframe}
       />
 
       <OrbitControls
         makeDefault
         target={[0, worldHeight * 0.45, 0]}
-        minDistance={worldHeight * 0.8}
-        maxDistance={worldHeight * 9}
+        minDistance={worldHeight * 3}
+        maxDistance={worldHeight * 28}
         maxPolarAngle={Math.PI * 0.49}
         minPolarAngle={0.12}
         enableDamping

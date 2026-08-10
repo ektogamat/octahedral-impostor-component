@@ -2,17 +2,69 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useGLTF } from "@react-three/drei";
 
-export function useCoconutTreeMesh(modelPath = "/coconut_tree.glb") {
+/** Triangle count for a loaded model root — used by stats / future model picker. */
+export function countMeshTriangles(root) {
+  if (!root) return 0;
+  let triangles = 0;
+  root.traverse((child) => {
+    if (!child.isMesh || !child.geometry) return;
+    const geometry = child.geometry;
+    const index = geometry.index;
+    if (index) {
+      triangles += Math.floor(index.count / 3);
+      return;
+    }
+    const position = geometry.getAttribute("position");
+    if (position) triangles += Math.floor(position.count / 3);
+  });
+  return triangles;
+}
+
+/**
+ * GLTF often marks opaque paints as alpha-blend (transparent + depthWrite false),
+ * which makes body panels see-through depending on draw order (Challenger).
+ */
+export function sanitizeSourceMaterial(material) {
+  if (!material) return material;
+  material.side = THREE.DoubleSide;
+
+  const hasCutout =
+    material.alphaTest > 0 || Boolean(material.alphaMap) || Boolean(material.alphaHash);
+  const fullyOpaque = (material.opacity ?? 1) >= 0.999 && !hasCutout;
+
+  if (fullyOpaque) {
+    material.transparent = false;
+    material.depthWrite = true;
+    material.depthTest = true;
+    material.opacity = 1;
+  } else {
+    material.depthWrite = true;
+  }
+
+  material.needsUpdate = true;
+  return material;
+}
+
+function sanitizeMeshMaterials(root) {
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    child.castShadow = false;
+    child.receiveShadow = false;
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : child.material
+        ? [child.material]
+        : [];
+    materials.forEach((material) => sanitizeSourceMaterial(material));
+  });
+}
+
+export function useImpostorSourceMesh(modelPath = "/coconut_tree.glb") {
   const { scene } = useGLTF(modelPath);
 
   return useMemo(() => {
     const root = scene.clone(true);
-    root.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = false;
-        child.receiveShadow = false;
-      }
-    });
+    sanitizeMeshMaterials(root);
 
     root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root);
@@ -34,6 +86,7 @@ export function useCoconutTreeMesh(modelPath = "/coconut_tree.glb") {
     normalizedBox.getCenter(normalizedCenter);
 
     root.userData.__impostorSourceId = modelPath;
+    const triangleCount = countMeshTriangles(root);
 
     return {
       meshGroup: root,
@@ -41,11 +94,16 @@ export function useCoconutTreeMesh(modelPath = "/coconut_tree.glb") {
       size: normalizedSize,
       center: normalizedCenter,
       height: normalizedSize.y,
+      triangleCount,
+      modelId: modelPath,
     };
   }, [scene, modelPath]);
 }
 
-export function CoconutTreeModel({
+/** @deprecated Prefer useImpostorSourceMesh — kept for existing imports. */
+export const useCoconutTreeMesh = useImpostorSourceMesh;
+
+export function ImpostorSourceModel({
   meshData,
   position = [0, 0, 0],
   scale = 1,
@@ -57,12 +115,13 @@ export function CoconutTreeModel({
     if (!meshData?.meshGroup) return null;
     const clone = meshData.meshGroup.clone(true);
     clone.traverse((node) => {
-      if (node.isMesh && node.material) {
-        if (Array.isArray(node.material)) {
-          node.material = node.material.map((material) => material.clone());
-        } else {
-          node.material = node.material.clone();
-        }
+      if (!node.isMesh || !node.material) return;
+      if (Array.isArray(node.material)) {
+        node.material = node.material.map((material) =>
+          sanitizeSourceMaterial(material.clone()),
+        );
+      } else {
+        node.material = sanitizeSourceMaterial(node.material.clone());
       }
     });
     return clone;
@@ -85,7 +144,7 @@ export function CoconutTreeModel({
           material.color.setHex(material.userData.__impostorBaseColor);
         }
         material.wireframe = wireframe;
-        material.needsUpdate = true;
+        sanitizeSourceMaterial(material);
       });
     });
   }, [displayGroup, wireframe]);
@@ -99,4 +158,8 @@ export function CoconutTreeModel({
   );
 }
 
+/** @deprecated Prefer ImpostorSourceModel */
+export const CoconutTreeModel = ImpostorSourceModel;
+
 useGLTF.preload("/coconut_tree.glb");
+useGLTF.preload("/low_poly_fox.glb");

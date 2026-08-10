@@ -1,11 +1,12 @@
 import { createContext, useContext } from "react";
 
-export const DEMO_GRID_SIZE = 16;
+export const DEMO_GRID_SIZE = 8;
 export const DEMO_ATLAS_SIZE = 4096;
 export const DEMO_OCT_TYPE = 0;
 
 export const impostorDemoDefaults = {
   showImpostors: false,
+  showBillboards: false,
   wireframe: false,
   atlas: null,
   isGenerating: false,
@@ -13,6 +14,8 @@ export const impostorDemoDefaults = {
   octahedralData: null,
   samplingCache: null,
   meshGroup: null,
+  modelTriangleCount: 0,
+  impostorCount: 2,
   treeScale: 1,
   treeYOffset: 0,
   activeSampleRef: { current: null },

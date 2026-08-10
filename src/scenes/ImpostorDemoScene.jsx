@@ -9,7 +9,8 @@ import {
   DEMO_OCT_TYPE,
   createEmptySample,
 } from "../impostor/impostorDemoStore";
-import { useCoconutTreeMesh } from "../impostor/CoconutTreeMesh";
+import { useImpostorSourceMesh } from "../impostor/CoconutTreeMesh";
+import { getDemoModelById } from "../impostor/demoModels";
 import AtlasDebugView from "../impostor/views/AtlasDebugView";
 import CaptureRigDebugView from "../impostor/views/CaptureRigDebugView";
 import MainComparisonView from "../impostor/views/MainComparisonView";
@@ -21,13 +22,16 @@ export default function ImpostorDemoScene({
   rigViewRef,
   mainViewRef,
   showImpostors,
+  showBillboards,
   wireframe,
   impostorCount,
   scaleVariance,
+  modelId,
   statsElementRef,
 }) {
   const activeSampleRef = useRef(createEmptySample());
-  const meshData = useCoconutTreeMesh();
+  const demoModel = getDemoModelById(modelId);
+  const meshData = useImpostorSourceMesh(demoModel.path);
 
   const { atlas, error, isGenerating, octahedralData } = useOctahedralAtlas({
     mesh: meshData?.meshGroup ?? null,
@@ -60,6 +64,7 @@ export default function ImpostorDemoScene({
   const demoValue = useMemo(
     () => ({
       showImpostors,
+      showBillboards,
       wireframe,
       atlas,
       isGenerating,
@@ -69,6 +74,8 @@ export default function ImpostorDemoScene({
       samplingCache,
       activeSampleRef,
       meshGroup: meshData?.meshGroup ?? null,
+      modelTriangleCount: meshData?.triangleCount ?? 0,
+      impostorCount,
       treeScale,
       worldHeight,
       worldWidth,
@@ -76,6 +83,7 @@ export default function ImpostorDemoScene({
     }),
     [
       showImpostors,
+      showBillboards,
       wireframe,
       atlas,
       isGenerating,
@@ -84,6 +92,7 @@ export default function ImpostorDemoScene({
       fallbackOctahedralData,
       samplingCache,
       meshData,
+      impostorCount,
       treeScale,
       worldHeight,
       worldWidth,
@@ -119,6 +128,7 @@ export default function ImpostorDemoScene({
             meshData={meshData}
             treeScale={treeScale}
             showImpostors={showImpostors}
+            showBillboards={showBillboards}
             wireframe={wireframe}
             impostorCount={impostorCount}
             scaleVariance={scaleVariance}

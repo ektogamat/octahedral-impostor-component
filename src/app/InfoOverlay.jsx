@@ -105,9 +105,9 @@ export default function InfoOverlay() {
             <section>
               <h3>Demo controls</h3>
               <p>
-                Use Show Impostors to reveal the billboards beside the original
-                mesh. Wireframe makes it obvious that the side trees are flat
-                quads, not full geometry.
+                Impostor shows view-dependent atlas frames. Billboard uses the
+                same field layout with one fixed image — look from above to see
+                the classic “lying forest”. Wireframe reveals the flat quads.
               </p>
             </section>
 

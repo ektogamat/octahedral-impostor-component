@@ -1,22 +1,58 @@
+import { DEMO_MODELS } from "../impostor/demoModels";
+
 export default function Overlay({
   showImpostors,
+  showBillboards,
   wireframe,
   impostorCount,
   scaleVariance,
+  modelId,
   onToggleImpostors,
+  onToggleBillboards,
   onToggleWireframe,
   onImpostorCountChange,
   onScaleVarianceChange,
+  onModelIdChange,
   statsRef,
 }) {
   return (
     <>
+      <label className="demo-model-picker" htmlFor="demo-model-select">
+        <span className="demo-model-picker-label">Model</span>
+        <select
+          id="demo-model-select"
+          className="demo-model-select"
+          value={modelId}
+          onChange={(event) => onModelIdChange(event.target.value)}
+        >
+          {DEMO_MODELS.map((model) => (
+            <option key={model.id} value={model.id}>
+              {model.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <div ref={statsRef} className="demo-main-stats">
-        <div>
-          Triangles <span data-stat="triangles">—</span>
+        <div className="demo-main-stats-row">
+          <span>Triangles</span>
+          <span data-stat="triangles">—</span>
         </div>
-        <div>
-          Draw calls <span data-stat="drawcalls">—</span>
+        <div className="demo-main-stats-row">
+          <span>Draw calls</span>
+          <span data-stat="drawcalls">—</span>
+        </div>
+        <div className="demo-main-stats-row">
+          <span>Model tris</span>
+          <span data-stat="model">—</span>
+        </div>
+        <div className="demo-main-stats-row">
+          <span>As mesh</span>
+          <span data-stat="asmesh">—</span>
+        </div>
+        <div className="demo-main-stats-row demo-main-stats-row--accent">
+          <span>Avoided</span>
+          <span data-stat="avoided">—</span>
         </div>
       </div>
 
@@ -65,7 +101,15 @@ export default function Overlay({
           onClick={onToggleImpostors}
           type="button"
         >
-          Show Impostors
+          Impostor
+        </button>
+        <button
+          className="demo-control-button"
+          data-active={showBillboards}
+          onClick={onToggleBillboards}
+          type="button"
+        >
+          Billboard
         </button>
         <button
           className="demo-control-button"

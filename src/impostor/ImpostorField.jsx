@@ -1,22 +1,39 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useImpostorDemo, DEMO_GRID_SIZE } from "./impostorDemoStore";
 import { buildRadialLayout } from "./utils/radialImpostorLayout";
+import { sampleOctahedralDirection } from "./utils/octahedralImpostorMath";
 import {
   applyActiveSampleToMaterial,
   createImpostorAtlasMaterial,
 } from "./utils/createImpostorAtlasMaterial";
 
-function orientBillboard(mesh, camera, faceCenter) {
-  const origin = faceCenter ?? mesh.position;
-  const dx = camera.position.x - origin.x;
-  const dy = camera.position.y - origin.y;
-  const dz = camera.position.z - origin.z;
-  const yaw = Math.atan2(dx, dz);
-  const pitch = Math.atan2(dy, Math.hypot(dx, dz));
-  mesh.rotation.order = "YXZ";
-  mesh.rotation.set(-pitch, yaw, 0);
+/** Fixed horizon view → single atlas cell (classic static billboard). */
+function createFixedBillboardSample(samplingCache) {
+  if (!samplingCache) return null;
+
+  const indicesTarget = new THREE.Vector3();
+  const weightsTarget = new THREE.Vector3();
+  const direction = new THREE.Vector3(0, 0.18, 1).normalize();
+  const result = sampleOctahedralDirection({
+    direction,
+    cache: samplingCache,
+    indicesTarget,
+    weightsTarget,
+  });
+  if (!result) return null;
+
+  let best = 0;
+  if (result.weights[1] > result.weights[best]) best = 1;
+  if (result.weights[2] > result.weights[best]) best = 2;
+  const index = result.indices[best];
+
+  return {
+    ...result,
+    indices: [index, index, index],
+    weights: [1, 0, 0],
+  };
 }
 
 export default function ImpostorField({
@@ -26,15 +43,17 @@ export default function ImpostorField({
   radius,
   faceCenter = null,
   scaleVariance = 0,
-  showImpostors = false,
+  mode = "off",
   wireframe = false,
   alphaTest = 0.3,
 }) {
-  const groupRef = useRef(null);
-  const meshesRef = useRef([]);
+  const meshRef = useRef(null);
+  const dummyRef = useRef(new THREE.Object3D());
+  const fixedSampleRef = useRef(null);
   const { camera } = useThree();
-  const { atlas, activeSampleRef } = useImpostorDemo();
+  const { atlas, activeSampleRef, samplingCache } = useImpostorDemo();
 
+  const active = mode === "impostor" || mode === "billboard";
   const gridSize = atlas?.gridSize ?? DEMO_GRID_SIZE;
   const layoutRadius = radius ?? planeSize * 0.85;
   const billboardOrigin = useMemo(() => {
@@ -74,50 +93,24 @@ export default function ImpostorField({
     [],
   );
 
-  const planeGeometry = useMemo(
-    () => new THREE.PlaneGeometry(planeSize, planeSize),
-    [planeSize],
-  );
+  const planeGeometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
 
-  useLayoutEffect(() => {
-    const group = groupRef.current;
-    if (!group) return;
-
-    meshesRef.current.forEach((mesh) => {
-      group.remove(mesh);
-    });
-    meshesRef.current = [];
-
-    if (!showImpostors || !atlas?.texture) return;
-
-    const material = wireframe ? wireframeMaterial : atlasMaterial;
-    if (!material) return;
-
-    for (let i = 0; i < positions.length; i++) {
-      const mesh = new THREE.Mesh(planeGeometry, material);
-      mesh.frustumCulled = false;
-      mesh.position.set(positions[i].x, positions[i].y, positions[i].z);
-      const s = positions[i].scale ?? 1;
-      mesh.scale.setScalar(s);
-      group.add(mesh);
-      meshesRef.current.push(mesh);
+  useEffect(() => {
+    if (mode !== "billboard" || !samplingCache || !atlasMaterial) {
+      fixedSampleRef.current = null;
+      return;
     }
+    const sample = createFixedBillboardSample(samplingCache);
+    fixedSampleRef.current = sample;
+    if (sample) applyActiveSampleToMaterial(atlasMaterial, sample);
+  }, [mode, samplingCache, atlasMaterial]);
 
-    return () => {
-      meshesRef.current.forEach((mesh) => {
-        group.remove(mesh);
-      });
-      meshesRef.current = [];
-    };
-  }, [
-    positions,
-    showImpostors,
-    atlas,
-    planeGeometry,
-    atlasMaterial,
-    wireframeMaterial,
-    wireframe,
-  ]);
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+  }, [positions.length, wireframe, atlasMaterial, mode]);
 
   useEffect(() => {
     return () => {
@@ -128,23 +121,59 @@ export default function ImpostorField({
   }, [atlasMaterial, wireframeMaterial, planeGeometry]);
 
   useFrame(() => {
-    const meshes = meshesRef.current;
-    if (!meshes.length) return;
+    const mesh = meshRef.current;
+    if (!mesh || !positions.length || !active) return;
 
-    for (const mesh of meshes) {
-      orientBillboard(mesh, camera, billboardOrigin);
+    const dummy = dummyRef.current;
+    const origin = billboardOrigin;
+    const dx = camera.position.x - origin.x;
+    const dy = camera.position.y - origin.y;
+    const dz = camera.position.z - origin.z;
+    const yaw = Math.atan2(dx, dz);
+    const pitch = Math.atan2(dy, Math.hypot(dx, dz));
+
+    // Full camera-facing billboard (pitch included) — from above, cards lie flat.
+    dummy.rotation.order = "YXZ";
+    dummy.rotation.set(-pitch, yaw, 0);
+
+    for (let i = 0; i < positions.length; i++) {
+      const p = positions[i];
+      const s = (p.scale ?? 1) * planeSize;
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.scale.set(s, s, 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
     }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.count = positions.length;
 
     if (wireframe || !atlasMaterial) return;
+
+    if (mode === "billboard") {
+      const fixed = fixedSampleRef.current;
+      if (fixed) applyActiveSampleToMaterial(atlasMaterial, fixed);
+      return;
+    }
 
     const sample = activeSampleRef?.current;
     if (!sample) return;
     applyActiveSampleToMaterial(atlasMaterial, sample);
   });
 
-  if (!showImpostors || !atlas?.texture) {
+  if (!active || !atlas?.texture || !positions.length) {
     return null;
   }
 
-  return <group ref={groupRef} />;
+  const material = wireframe ? wireframeMaterial : atlasMaterial;
+  if (!material) return null;
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[planeGeometry, material, positions.length]}
+      key={`${material.uuid}-${positions.length}-${mode}-${wireframe ? "w" : "a"}`}
+      matrixAutoUpdate={false}
+      frustumCulled={false}
+    />
+  );
 }
