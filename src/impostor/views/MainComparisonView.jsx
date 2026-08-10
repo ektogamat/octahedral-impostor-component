@@ -121,11 +121,12 @@ export default function MainComparisonView({
       <OrbitControls
         makeDefault
         target={[0, worldHeight * 0.45, 0]}
-        minDistance={worldHeight * 3}
+        minDistance={worldHeight * 5}
         maxDistance={worldHeight * 28}
         maxPolarAngle={Math.PI * 0.49}
         minPolarAngle={0.12}
         enableDamping
+        enablePan={false}
         dampingFactor={0.08}
       />
     </group>
