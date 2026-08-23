@@ -21,18 +21,21 @@ export function buildRadialLayout(
     radius = 1,
     y = 0,
     seed = 42,
-    minRadiusFactor = 0.08,
+    minRadiusFactor = 0.02,
     scaleVariance = 0,
+    fixedSpread = false,
   } = {},
 ) {
-  const n = Math.max(2, Math.floor(count));
+  const n = Math.max(1, Math.floor(count));
   const rand = mulberry32(seed);
   const positions = [];
   const variance = Math.max(0, Math.min(1, scaleVariance));
 
   // Tight at low counts; expand hard with count so 1000 fills a wide disk.
   // n=2 → ~1×, n≈50 → ~3.4×, n=1000 → ~18×.
-  const spreadScale = 1 + Math.pow(Math.max(n - 2, 0), 0.62) * 0.28;
+  const spreadScale = fixedSpread
+    ? 1
+    : 1 + Math.pow(Math.max(n - 2, 0), 0.62) * 0.28;
   const maxRadius = radius * spreadScale;
   const minRadius = maxRadius * minRadiusFactor;
 
@@ -40,6 +43,11 @@ export function buildRadialLayout(
     if (variance <= 0) return 1;
     return 1 + (rand() * 2 - 1) * variance;
   };
+
+  if (n === 1) {
+    positions.push({ x: 0, y, z: 0, scale: 1 });
+    return positions;
+  }
 
   if (n === 2) {
     const side = radius * 0.72;

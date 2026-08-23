@@ -23,22 +23,35 @@ export function countMeshTriangles(root) {
 /**
  * GLTF often marks opaque paints as alpha-blend (transparent + depthWrite false),
  * which makes surfaces see-through depending on draw order.
+ * Foliage keeps native BLEND from the glTF color-map alpha — do not set alphaMap = map
+ * (that multiplies alpha twice and culls almost all pixels).
  */
 export function sanitizeSourceMaterial(material) {
   if (!material) return material;
   material.side = THREE.DoubleSide;
 
-  const hasCutout =
-    material.alphaTest > 0 || Boolean(material.alphaMap) || Boolean(material.alphaHash);
-  const fullyOpaque = (material.opacity ?? 1) >= 0.999 && !hasCutout;
+  const isFoliage =
+    material.transparent ||
+    /leaf|leav|foliage|billboard/i.test(material.name ?? "");
 
-  if (fullyOpaque) {
+  if (isFoliage && material.map) {
+    material.transparent = true;
+    material.alphaTest = 0;
+    material.alphaMap = null;
+    material.depthWrite = false;
+    material.depthTest = true;
+    material.opacity = 1;
+  } else if ((material.opacity ?? 1) >= 0.999) {
     material.transparent = false;
+    material.alphaTest = 0;
+    material.alphaMap = null;
     material.depthWrite = true;
     material.depthTest = true;
     material.opacity = 1;
   } else {
-    material.depthWrite = true;
+    material.transparent = true;
+    material.depthWrite = false;
+    material.depthTest = true;
   }
 
   material.needsUpdate = true;
@@ -59,7 +72,7 @@ function sanitizeMeshMaterials(root) {
   });
 }
 
-export function useImpostorSourceMesh(modelPath = "/coconut_tree.glb") {
+export function useImpostorSourceMesh(modelPath = "/tree_low-poly.glb") {
   const { scene } = useGLTF(modelPath);
 
   return useMemo(() => {
@@ -161,5 +174,4 @@ export function ImpostorSourceModel({
 /** @deprecated Prefer ImpostorSourceModel */
 export const CoconutTreeModel = ImpostorSourceModel;
 
-useGLTF.preload("/coconut_tree.glb");
-useGLTF.preload("/low_poly_fox.glb");
+useGLTF.preload("/tree_low-poly.glb");

@@ -12,7 +12,7 @@ export async function createWebGPURenderer(props) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.alpha = false;
-  renderer.setClearColor(0x0b0d10, 1);
+  renderer.setClearColor(0xe4e4e8, 1);
 
   await renderer.init();
 
