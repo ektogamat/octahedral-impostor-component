@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import { useImpostorDemo, DEMO_GRID_SIZE } from "./impostorDemoStore";
 import { buildRadialLayout } from "./utils/radialImpostorLayout";
+import {
+  buildTextureLayout,
+  createTextureSampler,
+} from "./utils/textureImpostorLayout";
 import { sampleOctahedralDirection } from "./utils/octahedralImpostorMath";
 import {
   applyActiveSampleToMaterial,
@@ -46,6 +51,13 @@ export default function ImpostorField({
   mode = "off",
   wireframe = false,
   alphaTest = 0.28,
+  distributionTexture = null,
+  distributionIntensity = 1,
+  distributionContrast = 1,
+  distributionThreshold = 0.01,
+  areaSize = null,
+  avoidRadius = 0,
+  seed = 42,
 }) {
   const meshRef = useRef(null);
   const dummyRef = useRef(new THREE.Object3D());
@@ -56,6 +68,48 @@ export default function ImpostorField({
   const active = mode === "impostor" || mode === "billboard";
   const gridSize = atlas?.gridSize ?? DEMO_GRID_SIZE;
   const layoutRadius = radius ?? planeSize * 0.85;
+  const useDistribution = Boolean(distributionTexture);
+
+  // useTexture requires a string; keep a stable dummy path when unused.
+  const texturePath =
+    typeof distributionTexture === "string" && distributionTexture
+      ? distributionTexture
+      : "/distribution.jpg";
+  const loadedTexture = useTexture(texturePath);
+
+  useEffect(() => {
+    if (!useDistribution || !loadedTexture) return;
+    if (texturePath !== distributionTexture) return;
+    loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+    loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+    loadedTexture.minFilter = THREE.LinearFilter;
+    loadedTexture.magFilter = THREE.LinearFilter;
+    loadedTexture.generateMipmaps = false;
+    loadedTexture.flipY = false;
+    loadedTexture.colorSpace = THREE.NoColorSpace;
+  }, [loadedTexture, useDistribution, distributionTexture, texturePath]);
+
+  const distTexture = useMemo(() => {
+    if (!useDistribution) return null;
+    if (typeof distributionTexture === "string") {
+      return texturePath === distributionTexture ? loadedTexture : null;
+    }
+    return distributionTexture;
+  }, [useDistribution, distributionTexture, loadedTexture, texturePath]);
+
+  const resolvedAreaSize = useMemo(() => {
+    if (Array.isArray(areaSize) && areaSize.length >= 2) {
+      return [areaSize[0], areaSize[1]];
+    }
+    const extent = layoutRadius * 2;
+    return [extent, extent];
+  }, [areaSize, layoutRadius]);
+
+  const textureSampler = useMemo(() => {
+    if (!distTexture?.image) return null;
+    return createTextureSampler(distTexture, resolvedAreaSize, [0, 0, 0]);
+  }, [distTexture, resolvedAreaSize]);
+
   const billboardOrigin = useMemo(() => {
     if (faceCenter) {
       return faceCenter instanceof THREE.Vector3
@@ -65,16 +119,43 @@ export default function ImpostorField({
     return new THREE.Vector3(0, centerY, 0);
   }, [faceCenter, centerY]);
 
-  const positions = useMemo(
-    () =>
-      buildRadialLayout(count, {
-        radius: layoutRadius,
+  const positions = useMemo(() => {
+    if (useDistribution) {
+      if (!textureSampler) return [];
+      return buildTextureLayout(count, {
+        sampler: textureSampler,
+        areaSize: resolvedAreaSize,
+        origin: [0, 0, 0],
         y: centerY,
-        seed: 42,
+        seed,
         scaleVariance,
-      }),
-    [count, layoutRadius, centerY, scaleVariance],
-  );
+        intensity: distributionIntensity,
+        contrast: distributionContrast,
+        threshold: distributionThreshold,
+        avoidRadius,
+      });
+    }
+
+    return buildRadialLayout(count, {
+      radius: layoutRadius,
+      y: centerY,
+      seed,
+      scaleVariance,
+    });
+  }, [
+    useDistribution,
+    textureSampler,
+    count,
+    resolvedAreaSize,
+    centerY,
+    seed,
+    scaleVariance,
+    distributionIntensity,
+    distributionContrast,
+    distributionThreshold,
+    avoidRadius,
+    layoutRadius,
+  ]);
 
   const atlasMaterial = useMemo(
     () => createImpostorAtlasMaterial(atlas, gridSize, alphaTest),

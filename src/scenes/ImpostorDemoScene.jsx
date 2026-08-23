@@ -57,7 +57,7 @@ export default function ImpostorDemoScene({
 
   const treeScale = useMemo(() => {
     if (!meshData) return 1;
-    const targetHeight = 2.4;
+    const targetHeight = 0.02;
     return targetHeight / Math.max(meshData.height, 0.001);
   }, [meshData]);
 

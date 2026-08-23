@@ -2,7 +2,6 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { CoconutTreeModel } from "../CoconutTreeMesh";
 import { useImpostorDemo } from "../impostorDemoStore";
 import { sampleOctahedralDirection } from "../utils/octahedralImpostorMath";
 import ImpostorField from "../ImpostorField";
@@ -53,7 +52,7 @@ function getBakeFrameWorldSize(meshData, treeScale) {
   const sy = meshData?.size?.y ?? 1;
   const sz = meshData?.size?.z ?? 1;
   const maxDim = Math.max(sx, sy, sz, 0.001);
-  const scaleFactor = 0.72 / maxDim;
+  const scaleFactor = 1.5 / maxDim;
   return treeScale / scaleFactor;
 }
 
@@ -85,6 +84,12 @@ export default function MainComparisonView({
   );
   const fieldRadius = Math.max(worldWidth, planeSize) * 1.05;
   const fieldCenterY = worldHeight * 0.5;
+  // Fixed world extent so density rises with count while the map silhouette stays put.
+  const distributionExtent = Math.max(worldHeight * 16, planeSize * 82);
+  const distributionArea = useMemo(
+    () => [distributionExtent, distributionExtent],
+    [distributionExtent],
+  );
 
   return (
     <group>
@@ -93,7 +98,7 @@ export default function MainComparisonView({
         position={[0, worldHeight * 0.55, worldHeight * 2.4]}
         fov={38}
         near={0.05}
-        far={80}
+        far={Math.max(80, distributionExtent * 3)}
         onUpdate={(camera) => camera.lookAt(0, worldHeight * 0.45, 0)}
       />
 
@@ -103,12 +108,12 @@ export default function MainComparisonView({
       />
       <MainViewStats statsElementRef={statsElementRef} />
 
-      <CoconutTreeModel
+      {/* <CoconutTreeModel
         meshData={meshData}
         position={[0, 0, 0]}
         scale={treeScale}
         wireframe={wireframe}
-      />
+      /> */}
 
       <ImpostorField
         count={impostorCount}
@@ -119,13 +124,21 @@ export default function MainComparisonView({
         scaleVariance={scaleVariance}
         mode={fieldMode}
         wireframe={wireframe}
+        distributionTexture="/distribution.jpg"
+        // intensity≈1 keeps the soft vignette; 10 flattens smoke into a hard square
+        distributionIntensity={0.35}
+        distributionContrast={1.8}
+        distributionThreshold={0.47}
+        areaSize={distributionArea}
+        avoidRadius={Math.max(planeSize * 0.5, worldWidth * 0.18)}
+        seed={42}
       />
 
       <OrbitControls
         makeDefault
         target={[0, worldHeight * 0.45, 0]}
         minDistance={worldHeight * 5}
-        maxDistance={worldHeight * 28}
+        maxDistance={Math.max(worldHeight * 28, distributionExtent * 1.35)}
         maxPolarAngle={Math.PI * 0.47}
         minPolarAngle={0.12}
         enableDamping

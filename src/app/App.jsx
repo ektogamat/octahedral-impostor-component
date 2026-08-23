@@ -12,7 +12,7 @@ export default function App() {
   const [showBillboards, setShowBillboards] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [impostorCount, setImpostorCount] = useState(2);
-  const [scaleVariance] = useState(0.15);
+  const [scaleVariance] = useState(0.4);
   const [gridSize, setGridSize] = useState(DEMO_GRID_SIZE);
   const [modelId, setModelId] = useState(DEFAULT_DEMO_MODEL_ID);
 
