@@ -17,7 +17,28 @@ function buildAtlasCacheKey(mesh, gridSize, atlasSize, octType) {
         : THREE.MathUtils.generateUUID();
   }
 
-  return `${mesh.userData.__impostorSourceId}|g${gridSize}|a${atlasSize}|o${octType}|v14`;
+  return `${mesh.userData.__impostorSourceId}|g${gridSize}|a${atlasSize}|o${octType}|v20`;
+}
+
+/** Gutter pixels between atlas cells — extruded from content edges for safe mip filtering. */
+export const ATLAS_CELL_PADDING = 4;
+
+export function computeAtlasLayout(atlasSize, gridSize) {
+  const stride = gridSize + 1;
+  const slotSize = Math.floor(atlasSize / stride);
+  const padding = Math.min(
+    ATLAS_CELL_PADDING,
+    Math.max(0, Math.floor((slotSize - 8) / 2)),
+  );
+  const contentSize = slotSize - padding * 2;
+
+  return {
+    stride,
+    slotSize,
+    contentSize,
+    padding,
+    atlasSize,
+  };
 }
 
 /** PBR/lit sources need lights in the bake; unlit Basic (tree) must stay albedo-only. */
@@ -44,14 +65,25 @@ function sourceNeedsLitBake(mesh) {
 }
 
 function createBakeMaterial(material, litBake) {
-  const hasCutout =
-    (material.alphaTest ?? 0) > 0 || Boolean(material.alphaMap);
+  // Foliage glTFs often use BLEND (transparent + map alpha, alphaTest=0).
+  // Bake must cut those texels out so empty pixels keep clearColor alpha=0.
+  // Do NOT assign alphaMap = map — that multiplies alpha twice.
+  const usesTextureAlpha =
+    (material.alphaTest ?? 0) > 0 ||
+    Boolean(material.alphaMap) ||
+    Boolean(material.alphaToCoverage) ||
+    Boolean(material.alphaHash) ||
+    (Boolean(material.transparent) && Boolean(material.map)) ||
+    /leaf|leav|foliage|billboard/i.test(material.name ?? "");
+
   const shared = {
     color: material.color?.clone?.() ?? new THREEGL.Color(0xffffff),
     map: material.map ?? null,
     alphaMap: material.alphaMap ?? null,
-    transparent: hasCutout,
-    alphaTest: hasCutout ? Math.max(material.alphaTest ?? 0, 0.05) : 0,
+    transparent: usesTextureAlpha,
+    alphaTest: usesTextureAlpha
+      ? Math.max(material.alphaTest ?? 0, 0.28)
+      : 0,
     side: THREEGL.DoubleSide,
     depthWrite: true,
     toneMapped: false,
@@ -71,6 +103,90 @@ function createBakeMaterial(material, litBake) {
     emissiveMap: material.emissiveMap ?? null,
     emissiveIntensity: material.emissiveIntensity ?? 1,
   });
+}
+
+/**
+ * Spread opaque RGB into neighboring transparent texels so atlas filtering
+ * does not bleed clear-color into leaf edges (classic impostor bake trick).
+ */
+function dilateCellRgbIntoAlpha(pixels, width, height, radius = 1) {
+  const src = pixels.slice();
+  const opaque = 8;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if (src[i + 3] >= opaque) continue;
+
+      let bestDist = Infinity;
+      let br = 0;
+      let bg = 0;
+      let bb = 0;
+
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const ni = (ny * width + nx) * 4;
+          if (src[ni + 3] < opaque) continue;
+          const dist = dx * dx + dy * dy;
+          if (dist >= bestDist) continue;
+          bestDist = dist;
+          br = src[ni];
+          bg = src[ni + 1];
+          bb = src[ni + 2];
+        }
+      }
+
+      if (bestDist === Infinity) continue;
+      pixels[i] = br;
+      pixels[i + 1] = bg;
+      pixels[i + 2] = bb;
+    }
+  }
+}
+
+/** Place content in a padded slot and replicate edge texels into the gutter. */
+function buildPaddedCell(contentPixels, contentSize, padding) {
+  const slotSize = contentSize + padding * 2;
+  const slot = new Uint8Array(slotSize * slotSize * 4);
+
+  for (let y = 0; y < contentSize; y++) {
+    for (let x = 0; x < contentSize; x++) {
+      const si = ((y + padding) * slotSize + (x + padding)) * 4;
+      const ci = (y * contentSize + x) * 4;
+      slot[si] = contentPixels[ci];
+      slot[si + 1] = contentPixels[ci + 1];
+      slot[si + 2] = contentPixels[ci + 2];
+      slot[si + 3] = contentPixels[ci + 3];
+    }
+  }
+
+  for (let y = 0; y < slotSize; y++) {
+    for (let x = 0; x < slotSize; x++) {
+      if (
+        x >= padding &&
+        x < padding + contentSize &&
+        y >= padding &&
+        y < padding + contentSize
+      ) {
+        continue;
+      }
+
+      const cx = Math.min(Math.max(x, padding), padding + contentSize - 1);
+      const cy = Math.min(Math.max(y, padding), padding + contentSize - 1);
+      const si = (y * slotSize + x) * 4;
+      const ci = (cy * slotSize + cx) * 4;
+      slot[si] = slot[ci];
+      slot[si + 1] = slot[ci + 1];
+      slot[si + 2] = slot[ci + 2];
+      slot[si + 3] = slot[ci + 3];
+    }
+  }
+
+  return slot;
 }
 
 export function useOctahedralAtlas({
@@ -136,13 +252,17 @@ export function useOctahedralAtlas({
       gridSize,
       atlasSize,
     })
-      .then(({ texture, litBake }) => {
+      .then(({ texture, litBake, layout }) => {
         const atlasPayload = {
           texture,
           litBake,
           gridSize,
           octType,
           octahedralData,
+          atlasSize: layout.atlasSize,
+          slotSize: layout.slotSize,
+          contentSize: layout.contentSize,
+          padding: layout.padding,
         };
 
         if (cacheKey) {
@@ -184,9 +304,9 @@ export function useOctahedralAtlas({
  * - Bake all mesh geometry into a single local space centered on the AABB
  * - Scale so the largest axis fits inside the ortho frame (±0.5) with margin
  * - Always lookAt(0,0,0) so every view shares the same pivot (stable base)
- * - Pack stride x stride tiles where stride = gridSize + 1 (one tile per
- *   octahedron vertex). flatIdx = row * stride + col must match the vertex
- *   order from octahedralHelper and the shader decode.
+ * - Pack stride x stride slots with ATLAS_CELL_PADDING gutter between cells.
+ *   Each slot holds contentSize x contentSize texels plus extruded edge padding
+ *   so mipmaps do not bleed between adjacent views.
  */
 async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   const renderMesh =
@@ -235,8 +355,8 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   renderMesh.updateMatrixWorld(true);
 
   const orthoSize = 0.5;
-  const stride = gridSize + 1;
-  const cellSize = Math.floor(atlasSize / stride);
+  const layout = computeAtlasLayout(atlasSize, gridSize);
+  const { stride, slotSize, contentSize, padding } = layout;
   const { pntOct } = octahedralData;
 
   const canvas = document.createElement("canvas");
@@ -249,15 +369,15 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   ctx.clearRect(0, 0, atlasSize, atlasSize);
 
   const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = cellSize;
-  tempCanvas.height = cellSize;
+  tempCanvas.width = contentSize;
+  tempCanvas.height = contentSize;
 
   const tempGlRenderer = new THREEGL.WebGLRenderer({
     canvas: tempCanvas,
     preserveDrawingBuffer: true,
     antialias: false,
   });
-  tempGlRenderer.setSize(cellSize, cellSize);
+  tempGlRenderer.setSize(contentSize, contentSize);
   tempGlRenderer.setClearColor(0x000000, 0);
   // No ACES in the bake — runtime tone-maps impostors once (matches main view).
   tempGlRenderer.outputColorSpace = THREEGL.SRGBColorSpace;
@@ -267,12 +387,13 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   const glRenderScene = new THREEGL.Scene();
 
   if (litBake) {
-    // Match MainComparisonView lights (Environment IBL is approximate via fill).
-    glRenderScene.add(new THREEGL.AmbientLight(0xffffff, 0.55));
+    // Match ImpostorDemoScene main view: ambient 2.55 + key [5,8,4] @ 1.4.
+    // Environment HDRI (studio_small_09, intensity 0.55) is approximated by fill.
+    glRenderScene.add(new THREEGL.AmbientLight(0xffffff, 5.55));
     const key = new THREEGL.DirectionalLight(0xffffff, 1.4);
     key.position.set(5, 8, 4);
     glRenderScene.add(key);
-    const fill = new THREEGL.DirectionalLight(0xffffff, 0.45);
+    const fill = new THREEGL.DirectionalLight(0xffffff, 0.55);
     fill.position.set(-4, 3, -2);
     glRenderScene.add(fill);
   }
@@ -329,20 +450,23 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
         const glContext = tempGlRenderer.getContext();
         if (!glContext) continue;
 
-        const pixels = new Uint8Array(cellSize * cellSize * 4);
+        const pixels = new Uint8Array(contentSize * contentSize * 4);
         glContext.readPixels(
           0,
           0,
-          cellSize,
-          cellSize,
+          contentSize,
+          contentSize,
           glContext.RGBA,
           glContext.UNSIGNED_BYTE,
           pixels,
         );
 
-        const cellImageData = ctx.createImageData(cellSize, cellSize);
-        cellImageData.data.set(pixels);
-        ctx.putImageData(cellImageData, colIdx * cellSize, rowIdx * cellSize);
+        dilateCellRgbIntoAlpha(pixels, contentSize, contentSize, 2);
+
+        const slotPixels = buildPaddedCell(pixels, contentSize, padding);
+        const cellImageData = ctx.createImageData(slotSize, slotSize);
+        cellImageData.data.set(slotPixels);
+        ctx.putImageData(cellImageData, colIdx * slotSize, rowIdx * slotSize);
       } catch (err) {
         console.warn("Error reading pixels from render target:", err);
       }
@@ -364,10 +488,11 @@ async function generateAtlas({ mesh, octahedralData, gridSize, atlasSize }) {
   atlasTexture.needsUpdate = true;
   atlasTexture.flipY = false;
   atlasTexture.colorSpace = THREE.SRGBColorSpace;
-  atlasTexture.minFilter = THREE.LinearFilter;
+  atlasTexture.generateMipmaps = true;
+  atlasTexture.minFilter = THREE.LinearMipmapLinearFilter;
   atlasTexture.magFilter = THREE.LinearFilter;
   atlasTexture.wrapS = THREE.ClampToEdgeWrapping;
   atlasTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-  return { texture: atlasTexture, litBake };
+  return { texture: atlasTexture, litBake, layout };
 }

@@ -8,11 +8,14 @@ export async function createWebGPURenderer(props) {
 
   const renderer = new THREE.WebGPURenderer({
     ...props,
+    antialias: true,
+    samples: 8,
   });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.alpha = false;
-  renderer.setClearColor(0x0b0d10, 1);
+  // Overbright clear so ACES still lands near pure white (1,1,1 → ~0.8 gray).
+  renderer.setClearColor(new THREE.Color(2.2, 2.2, 2.2), 1);
 
   await renderer.init();
 

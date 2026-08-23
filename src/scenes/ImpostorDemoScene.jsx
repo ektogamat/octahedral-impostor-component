@@ -17,6 +17,9 @@ import MainComparisonView from "../impostor/views/MainComparisonView";
 import { LockedAtlasCamera, LockedRigCamera } from "../impostor/LockedCameras";
 import TrackedView from "../impostor/TrackedView";
 
+/** Scene bg after ACESFilmic — pure #fff reads as gray; overbright lands near white. */
+const CANVAS_BG = [2.2, 2.2, 2.2];
+
 export default function ImpostorDemoScene({
   atlasViewRef,
   rigViewRef,
@@ -103,7 +106,7 @@ export default function ImpostorDemoScene({
   return (
     <ImpostorDemoContext.Provider value={demoValue}>
       <TrackedView track={atlasViewRef} index={1}>
-        <color attach="background" args={["#0d0f12"]} />
+        <color attach="background" args={CANVAS_BG} />
         <LockedAtlasCamera />
         <Suspense fallback={null}>
           <AtlasDebugView />
@@ -111,8 +114,8 @@ export default function ImpostorDemoScene({
       </TrackedView>
 
       <TrackedView track={rigViewRef} index={2}>
-        <color attach="background" args={["#131820"]} />
-        <ambientLight intensity={0.55} />
+        <color attach="background" args={CANVAS_BG} />
+        <ambientLight intensity={2.55} />
         <directionalLight position={[3, 5, 2]} intensity={0.8} />
         <LockedRigCamera worldHeight={worldHeight} worldWidth={worldWidth} />
         <Suspense fallback={null}>
@@ -121,8 +124,8 @@ export default function ImpostorDemoScene({
       </TrackedView>
 
       <TrackedView track={mainViewRef} index={3}>
-        <color attach="background" args={["#000000"]} />
-        <ambientLight intensity={0.55} />
+        <color attach="background" args={CANVAS_BG} />
+        <ambientLight intensity={2.55} />
         <directionalLight position={[5, 8, 4]} intensity={1.4} />
         <Suspense fallback={null}>
           <MainComparisonView

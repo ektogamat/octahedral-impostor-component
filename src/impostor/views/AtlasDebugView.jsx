@@ -1,13 +1,17 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { useFrame } from "@react-three/fiber";
-import { useImpostorDemo, DEMO_GRID_SIZE } from "../impostorDemoStore";
+import {
+  useImpostorDemo,
+  DEMO_GRID_SIZE,
+  DEMO_ATLAS_SIZE,
+} from "../impostorDemoStore";
 
-function buildGridPositions(stride) {
+function buildGridPositions(stride, slotSizeNorm) {
   const positions = [];
 
   for (let i = 0; i <= stride; i++) {
-    const t = i / stride;
+    const t = i * slotSizeNorm;
     // Row 0 is at the TOP of the atlas plane (matches canvas putImageData).
     positions.push(0, 1 - t, 0.002, 1, 1 - t, 0.002);
     positions.push(t, 0, 0.002, t, 1, 0.002);
@@ -33,34 +37,40 @@ function getDominantFlatIndex(sample, stride) {
     Math.min(Math.max(sample.col, 0), stride - 1);
 }
 
-function cellRect(flatIndex, stride) {
+function cellRect(flatIndex, stride, slotSizeNorm, padNorm, contentNorm) {
   const vCol = flatIndex % stride;
   const vRow = Math.floor(flatIndex / stride);
-  const cellW = 1 / stride;
-  const cellH = 1 / stride;
-  const x0 = vCol * cellW;
-  const x1 = x0 + cellW;
-  const yTop = 1 - vRow * cellH;
-  const yBottom = yTop - cellH;
+  const x0 = vCol * slotSizeNorm + padNorm;
+  const x1 = x0 + contentNorm;
+  const yTop = 1 - vRow * slotSizeNorm - padNorm;
+  const yBottom = yTop - contentNorm;
   return { x0, x1, yTop, yBottom, vCol, vRow };
 }
 
-function AtlasGridOverlay({ gridSize }) {
+function AtlasGridOverlay({ gridSize, atlas }) {
   const { activeSampleRef } = useImpostorDemo();
   const fillRef = useRef(null);
   const borderRef = useRef(null);
   const fillMatRef = useRef(null);
   const borderMatRef = useRef(null);
   const stride = gridSize + 1;
+  const atlasSize = atlas?.atlasSize ?? DEMO_ATLAS_SIZE;
+  const slotSize = atlas?.slotSize ?? Math.floor(atlasSize / stride);
+  const slotSizeNorm = slotSize / atlasSize;
+  const padNorm = (atlas?.padding ?? 0) / atlasSize;
+  const contentNorm = (atlas?.contentSize ?? slotSize) / atlasSize;
 
   const gridGeometry = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       "position",
-      new THREE.Float32BufferAttribute(buildGridPositions(stride), 3),
+      new THREE.Float32BufferAttribute(
+        buildGridPositions(stride, slotSizeNorm),
+        3,
+      ),
     );
     return geometry;
-  }, [stride]);
+  }, [stride, slotSizeNorm]);
 
   const borderGeometry = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
@@ -77,7 +87,13 @@ function AtlasGridOverlay({ gridSize }) {
     if (!sample || !fillRef.current) return;
 
     const flatIndex = getDominantFlatIndex(sample, stride);
-    const { x0, x1, yTop, yBottom } = cellRect(flatIndex, stride);
+    const { x0, x1, yTop, yBottom } = cellRect(
+      flatIndex,
+      stride,
+      slotSizeNorm,
+      padNorm,
+      contentNorm,
+    );
     const cx = (x0 + x1) * 0.5;
     const cy = (yTop + yBottom) * 0.5;
     const w = x1 - x0;
@@ -125,23 +141,23 @@ function AtlasGridOverlay({ gridSize }) {
     borderGeometry.setDrawRange(0, 8);
 
     const pulse = 0.55 + Math.sin(clock.elapsedTime * 5) * 0.25;
-    if (fillMatRef.current) fillMatRef.current.opacity = pulse * 0.45;
-    if (borderMatRef.current) borderMatRef.current.opacity = 0.85 + pulse * 0.15;
+    if (fillMatRef.current) fillMatRef.current.opacity = 0.18 + pulse * 0.22;
+    if (borderMatRef.current) borderMatRef.current.opacity = 0.9 + pulse * 0.1;
   });
 
   return (
     <group position={[0, 0, 0.01]}>
       <lineSegments geometry={gridGeometry}>
-        <lineBasicMaterial color="#ffffff" transparent opacity={0.28} />
+        <lineBasicMaterial color="#222222" transparent opacity={0.35} />
       </lineSegments>
 
       <mesh ref={fillRef} visible={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial
           ref={fillMatRef}
-          color="#ffcc00"
+          color="#1a1a1a"
           transparent
-          opacity={0.35}
+          opacity={0.28}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -150,10 +166,11 @@ function AtlasGridOverlay({ gridSize }) {
       <lineSegments ref={borderRef} geometry={borderGeometry}>
         <lineBasicMaterial
           ref={borderMatRef}
-          color="#ffe566"
+          color="#111111"
           transparent
           opacity={1}
           depthWrite={false}
+          linewidth={2}
         />
       </lineSegments>
     </group>
@@ -168,7 +185,7 @@ export default function AtlasDebugView() {
     return (
       <mesh>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color="#1a1a1a" />
+        <meshBasicMaterial color="#e8e8e8" />
       </mesh>
     );
   }
@@ -177,10 +194,17 @@ export default function AtlasDebugView() {
     <group position={[0.5, 0.5, 0]}>
       <mesh>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={atlas.texture} toneMapped={false} />
+        <meshBasicMaterial
+          map={atlas.texture}
+          toneMapped={false}
+          transparent
+          alphaTest={0.02}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
       </mesh>
       <group position={[-0.5, -0.5, 0]}>
-        <AtlasGridOverlay gridSize={gridSize} />
+        <AtlasGridOverlay gridSize={gridSize} atlas={atlas} />
       </group>
     </group>
   );

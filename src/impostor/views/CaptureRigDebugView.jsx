@@ -12,7 +12,7 @@ function ViewDirectionMarker({ target, length }) {
         new THREE.Vector3(0, 1, 0),
         target.clone(),
         length,
-        0xffcc00,
+        0x14b8a6,
         length * 0.12,
         length * 0.06,
       ),
@@ -54,7 +54,7 @@ function CameraCone({ position, lookTarget, index, size }) {
     const active = Boolean(sample?.indices?.includes(index));
     const pulse = active ? 1.2 + Math.sin(clock.elapsedTime * 5) * 0.12 : 1;
     meshRef.current.scale.setScalar(pulse * (active ? 1.35 : 0.9));
-    materialRef.current.color.set(active ? "#ffcc00" : "#707070");
+    materialRef.current.color.set(active ? "#14b8a6" : "#707070");
     materialRef.current.opacity = active ? 1 : 0.32;
     materialRef.current.wireframe = !active;
   });

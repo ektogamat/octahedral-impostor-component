@@ -21,7 +21,7 @@ export function buildRadialLayout(
     radius = 1,
     y = 0,
     seed = 42,
-    minRadiusFactor = 0.08,
+    minRadiusFactor = 0.02,
     scaleVariance = 0,
   } = {},
 ) {

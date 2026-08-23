@@ -45,7 +45,7 @@ export default function ImpostorField({
   scaleVariance = 0,
   mode = "off",
   wireframe = false,
-  alphaTest = 0.3,
+  alphaTest = 0.28,
 }) {
   const meshRef = useRef(null);
   const dummyRef = useRef(new THREE.Object3D());
@@ -84,11 +84,11 @@ export default function ImpostorField({
   const wireframeMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: 0xffffff,
+        color: 0x111827,
         wireframe: true,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.92,
       }),
     [],
   );

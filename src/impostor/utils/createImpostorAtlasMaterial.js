@@ -1,15 +1,15 @@
 import * as THREE from "three/webgpu";
 import { texture, uniform, uv, vec2, vec3, float } from "three/tsl";
 
-export function createImpostorAtlasMaterial(atlasPayload, gridSize, alphaTest = 0.25) {
+export function createImpostorAtlasMaterial(atlasPayload, gridSize, alphaTest = 0.28) {
   if (!atlasPayload?.texture) return null;
 
   const material = new THREE.MeshBasicNodeMaterial();
-  // Cutout impostors: alphaTest discards empty texels, depthWrite keeps
-  // nearer cards from being overpainted by farther ones (instance order).
-  // Bake uses NoToneMapping; runtime ACES matches the lit mesh view.
-  material.transparent = true;
+  // A2C + MSAA: soft edges without alphaHash grain; depthWrite stays on.
+  material.transparent = false;
   material.alphaTest = alphaTest;
+  material.alphaToCoverage = true;
+  material.alphaHash = false;
   material.side = THREE.DoubleSide;
   material.depthWrite = true;
   material.depthTest = true;
@@ -17,6 +17,13 @@ export function createImpostorAtlasMaterial(atlasPayload, gridSize, alphaTest = 
 
   const stride = gridSize + 1;
   const strideUniform = uniform(float(stride));
+  const atlasSize = atlasPayload.atlasSize ?? 4096;
+  const slotSize = atlasPayload.slotSize ?? Math.floor(atlasSize / stride);
+  const contentSize = atlasPayload.contentSize ?? slotSize;
+  const cellPadding = atlasPayload.padding ?? 0;
+  const slotSizeNorm = uniform(float(slotSize / atlasSize));
+  const padNorm = uniform(float(cellPadding / atlasSize));
+  const contentNorm = uniform(float(contentSize / atlasSize));
   const atlasTexture = texture(atlasPayload.texture);
   const faceIndicesUniform = uniform(vec3(0, 1, 2));
   const faceWeightsUniform = uniform(vec3(1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0));
@@ -38,10 +45,13 @@ export function createImpostorAtlasMaterial(atlasPayload, gridSize, alphaTest = 
   const colC = flatIndexC.sub(rowC.mul(strideUniform));
   const cellIndexC = vec2(colC, rowC);
 
-  const invStride = float(1.0).div(strideUniform);
-  const atlasUVA = cellIndexA.add(vUv).mul(invStride);
-  const atlasUVB = cellIndexB.add(vUv).mul(invStride);
-  const atlasUVC = cellIndexC.add(vUv).mul(invStride);
+  const cellOriginA = cellIndexA.mul(slotSizeNorm);
+  const cellOriginB = cellIndexB.mul(slotSizeNorm);
+  const cellOriginC = cellIndexC.mul(slotSizeNorm);
+  const padOffset = vec2(padNorm, padNorm);
+  const atlasUVA = cellOriginA.add(padOffset).add(vUv.mul(contentNorm));
+  const atlasUVB = cellOriginB.add(padOffset).add(vUv.mul(contentNorm));
+  const atlasUVC = cellOriginC.add(padOffset).add(vUv.mul(contentNorm));
 
   const colorA = atlasTexture.sample(atlasUVA);
   const colorB = atlasTexture.sample(atlasUVB);

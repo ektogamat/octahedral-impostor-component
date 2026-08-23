@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { DEMO_MODELS } from "../impostor/demoModels";
 import { DEMO_GRID_SIZES } from "../impostor/impostorDemoStore";
 
@@ -16,6 +17,20 @@ export default function Overlay({
   onModelIdChange,
   statsRef,
 }) {
+  const [sliderDragging, setSliderDragging] = useState(false);
+
+  useEffect(() => {
+    if (!sliderDragging) return undefined;
+
+    const endDrag = () => setSliderDragging(false);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    return () => {
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+    };
+  }, [sliderDragging]);
+
   return (
     <>
       <label className="demo-model-picker" htmlFor="demo-model-select">
@@ -34,7 +49,10 @@ export default function Overlay({
         </select>
       </label>
 
-      <div ref={statsRef} className="demo-main-stats">
+      <div
+        ref={statsRef}
+        className={`demo-main-stats${sliderDragging ? " is-enlarged" : ""}`}
+      >
         <div className="demo-main-stats-row">
           <span>Triangles</span>
           <span data-stat="triangles">—</span>
@@ -67,9 +85,10 @@ export default function Overlay({
                 className="demo-slider-input"
                 type="range"
                 min={2}
-                max={1000}
+                max={15000}
                 step={1}
                 value={impostorCount}
+                onPointerDown={() => setSliderDragging(true)}
                 onChange={(event) =>
                   onImpostorCountChange(Number(event.target.value))
                 }
